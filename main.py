@@ -118,6 +118,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 def main() -> None:
     """Запуск бота."""
+    
     if not TELEGRAM_BOT_TOKEN:
         raise RuntimeError("Не найден TELEGRAM_BOT_TOKEN в cfg.py")
 
