@@ -34,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 MAIN_KEYBOARD = ReplyKeyboardMarkup(
-    [["ℹ️ О нас", "✉️ Оставить обращение"]], resize_keyboard=True
+    [["ℹ️ О нас", "✉️ Оставить обращение"], ["📞 Контакты"]], resize_keyboard=True
 )
 ABOUT_URL = "http://advpankratova.ru/"
 DB_PATH = Path("DataBase") / "advbot.db"
@@ -129,7 +129,7 @@ def user_link(update: Update) -> str:
     return f"<a href=\"tg://user?id={user.id}\">{display_name}</a>"
 
 
-def show_requests_menu(update: Update, text: str) -> None:
+async def show_requests_menu(update: Update, text: str) -> None:
     keyboard = InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("🚨 Экстренный вызов", callback_data="emergency_open")],
@@ -137,10 +137,10 @@ def show_requests_menu(update: Update, text: str) -> None:
         ]
     )
     if update.callback_query:
-        update.callback_query.answer()
-        update.callback_query.edit_message_text(text, reply_markup=keyboard)
+        await update.callback_query.answer()
+        await update.callback_query.edit_message_text(text, reply_markup=keyboard)
     else:
-        update.message.reply_text(text, reply_markup=keyboard)
+        await update.message.reply_text(text, reply_markup=keyboard)
 
 
 def emergency_summary(data: Dict[str, Optional[str]]) -> str:
@@ -222,6 +222,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "Доступные действия:\n"
         "• ℹ️ О нас – краткая информация об адвокате.\n"
         "• ✉️ Оставить обращение – экстренный вызов или заявка на консультацию.\n"
+        "• 📞 Контакты – быстро связаться с адвокатом.\n"
         "Команда /start возвращает основное меню."
     )
     await update.message.reply_text(text, reply_markup=MAIN_KEYBOARD)
@@ -233,7 +234,12 @@ async def handle_main_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
         about = fetch_about_info()
         await update.message.reply_text(about, reply_markup=MAIN_KEYBOARD)
     elif text == "✉️ Оставить обращение":
-        show_requests_menu(update, "Выберите формат обращения:")
+        await show_requests_menu(update, "Выберите формат обращения:")
+    elif text == "📞 Контакты":
+        await update.message.reply_text(
+            "Связаться с адвокатом:\nТелеграм: @user\nТелефон: +7 (913) 977-19-10",
+            reply_markup=MAIN_KEYBOARD,
+        )
     else:
         await update.message.reply_text(
             "Пожалуйста, воспользуйтесь кнопками меню или командой /help.",
@@ -335,7 +341,7 @@ async def submit_emergency(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 
 async def back_to_requests(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    show_requests_menu(update, "Выберите формат обращения:")
+    await show_requests_menu(update, "Выберите формат обращения:")
 
 
 async def open_consultation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
