@@ -1,12 +1,8 @@
 import logging
-import re
 import sqlite3
 from datetime import datetime, timedelta
-from html import unescape
 from pathlib import Path
 from typing import Dict, Optional
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
 
 from telegram import (
     InlineKeyboardButton,
@@ -36,7 +32,6 @@ logger = logging.getLogger(__name__)
 MAIN_KEYBOARD = ReplyKeyboardMarkup(
     [["ℹ️ О нас", "✉️ Оставить обращение"], ["📞 Контакты"]], resize_keyboard=True
 )
-ABOUT_URL = "http://advpankratova.ru/"
 DB_PATH = Path("DataBase") / "advbot.db"
 
 TIME_SLOTS = [
@@ -96,27 +91,12 @@ def fetch_about_info() -> str:
     if ABOUT_CACHE:
         return ABOUT_CACHE
 
-    description = None
-    try:
-        request = Request(ABOUT_URL, headers={"User-Agent": "Mozilla/5.0"})
-        with urlopen(request, timeout=10) as response:
-            html = response.read().decode("utf-8", errors="ignore")
-        meta_match = re.search(
-            r'<meta[^>]+name=["\']description["\'][^>]*content=["\'](.*?)["\']',
-            html,
-            re.IGNORECASE | re.DOTALL,
-        )
-        if meta_match:
-            description = unescape(meta_match.group(1)).strip()
-    except (HTTPError, URLError, TimeoutError) as exc:  # pragma: no cover - сеть
-        logger.warning("Не удалось получить данные с сайта: %s", exc)
-
     ABOUT_CACHE = (
-        description
-        or "Адвокат Панкратова А.В. предоставляет квалифицированную правовую помощь,"
-        " работает с уголовными и гражданскими делами и сопровождает клиентов на всех стадиях защиты."
+        "Панкратова А.В. — адвокат по уголовным делам. Подполковник юстиции на пенсии "
+        "с опытом работы следователем более 20 лет. Подробности: http://advpankratova.ru/"
     )
     return ABOUT_CACHE
+
 
 
 def checkbox(value: Optional[str]) -> str:
@@ -232,13 +212,20 @@ async def handle_main_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
     text = update.message.text.strip()
     if text == "ℹ️ О нас":
         about = fetch_about_info()
-        await update.message.reply_text(about, reply_markup=MAIN_KEYBOARD)
+        await update.message.reply_photo(
+            photo=Path("logo.webp").open("rb"), caption=about, reply_markup=MAIN_KEYBOARD
+        )
     elif text == "✉️ Оставить обращение":
         await show_requests_menu(update, "Выберите формат обращения:")
     elif text == "📞 Контакты":
-        await update.message.reply_text(
-            "Связаться с адвокатом:\nТелеграм: @user\nТелефон: +7 (913) 977-19-10",
-            reply_markup=MAIN_KEYBOARD,
+        contact_text = (
+            "Связаться с адвокатом:\n"
+            "Канал: @PankratovaLawyer\n"
+            "Телефон: +7 913 977-19-10\n"
+            "Сайт: http://advpankratova.ru/"
+        )
+        await update.message.reply_photo(
+            photo=Path("logo.webp").open("rb"), caption=contact_text, reply_markup=MAIN_KEYBOARD
         )
     else:
         await update.message.reply_text(
