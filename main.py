@@ -249,10 +249,10 @@ async def handle_main_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 async def open_emergency(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
-    query.answer()
+    await query.answer()
     context.user_data["emergency"] = {"phone": None, "address": None, "coordinates": None, "article": None}
     context.user_data.pop("flow", None)
-    query.edit_message_text(
+    await query.edit_message_text(
         emergency_summary(context.user_data["emergency"]),
         reply_markup=emergency_keyboard(context.user_data["emergency"]),
     )
@@ -314,7 +314,7 @@ async def select_emergency_article(update: Update, context: ContextTypes.DEFAULT
 
 async def submit_emergency(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
-    query.answer()
+    await query.answer()
     data = context.user_data.get("emergency", {})
     user = update.effective_user
     message = (
@@ -346,7 +346,7 @@ async def back_to_requests(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 async def open_consultation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
-    query.answer()
+    await query.answer()
     context.user_data["flow"] = "consult"
     context.user_data["consult_step"] = "city"
     context.user_data["consult_data"] = {
